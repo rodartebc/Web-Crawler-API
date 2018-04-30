@@ -1,0 +1,30 @@
+{
+  "name": "web-crawler",
+  "version": "1.0.0",
+  "description": "A webcrawler built with Node, Express, Request, and Cheerio",
+  "main": "index.js",
+  "engines": {
+    "node": ">=8.10"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "webcrawler",
+    "Node",
+    "Express",
+    "Request",
+    "Cheerio"
+  ],
+  "author": "Ben C. Rodarte",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "body-parser": "^1.18.2",
+    "cheerio": "^1.0.0-rc.2",
+    "express": "^4.16.3",
+    "iconv-lite": "^0.4.21",
+    "request": "^2.85.0"
+  }
+}

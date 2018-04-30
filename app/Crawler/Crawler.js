@@ -1,4 +1,3 @@
-const request = require('request');
 const cheerio = require('cheerio');
 const axios = require('axios');
 
@@ -14,8 +13,12 @@ class WebCrawler {
         let crawlResult = [crawlParams.start];
         let errorCount = 0;
         let maxTimeElapsed = false;
-        const requestTimer = setTimeout(() => { maxTimeElapsed = true }, crawlParams.maxSeconds * 1000); // *1000 because setTimeout uses ms
-        while (crawlResult.length < crawlParams.limit && errorCount < crawlParams.limit * 2 && !this.maxTimeElapsed) {
+        
+        const requestTimer = setTimeout(() => { 
+            maxTimeElapsed = true 
+        }, crawlParams.maxSeconds * 1000); // *1000 because setTimeout uses ms
+
+        while (crawlResult.length < crawlParams.limit && errorCount < crawlParams.limit * 2 && !maxTimeElapsed) {
             try {
                 const linksOnCurrentPage = await this.scrapePageAsync(crawlResult[crawlResult.length - 1]);
                 if (!linksOnCurrentPage || linksOnCurrentPage.length === 0) {

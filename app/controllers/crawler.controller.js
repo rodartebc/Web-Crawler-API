@@ -7,7 +7,8 @@ exports.defaultGet = async (req, res) => {
         'start': 'https://www.blizzard.com/en-us/',
         'method': 'DFS',
         'limit': 10,
-        'maxSeconds': 10
+        'maxSeconds': 10,
+        'keyword': null
     };
     try {
         console.log("Crawl in progress: \n", crawlParams);
@@ -16,7 +17,6 @@ exports.defaultGet = async (req, res) => {
         res.send(links);
     }
     catch (error) {
-        console.log("Crawler error");
         return error;
     }
 
@@ -33,7 +33,8 @@ exports.crawl = async (req, res) => {
         'start': req.body.startURL,
         'method': req.body.method,
         'limit': req.body.limit,
-        'maxSeconds': req.body.maxSeconds ? req.body.maxSeconds : 10
+        'maxSeconds': req.body.maxSeconds ? req.body.maxSeconds : 10,
+        'keyword': req.body.keyword ? req.body.keyword : null
     };
     try {
         let links;
@@ -48,6 +49,7 @@ exports.crawl = async (req, res) => {
         res.send(links);
     }
     catch (error) {
+        console.log(error);
         console.log("Crawler error");
         return error;
     }

@@ -1,8 +1,11 @@
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 
 // create express app
 const app = express();
+
+app.use(cors())
 
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({extended: true}));

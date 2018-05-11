@@ -9,16 +9,19 @@ class CrawlUtils {
         try {
             let startTime = new Date();
             const response = await axios({ url: url, timeout: 3000 });
+            const $ = cheerio.load(response.data, {decodeEntities: false});
             let links = [];
             let keywordFound;
             if (response.data) {
                 if (keyword) {
-                    keywordFound = this.searchKeyword(response.data, keyword);
+                    keywordFound = this.searchKeyword($, response.data, keyword);
                 }
-                links = this.parseLinks(response.data, url);
+                links = this.parseLinks($, response.data, url);
             }
             console.log("* " + "REQUEST AND PARSE (" + url + ") DONE IN: " + (new Date() - startTime) + "ms")
             return {
+                name: $('title').text().trim(),
+                url: url,
                 linksOnPage: links,
                 keywordFound: keywordFound
             };
@@ -28,9 +31,30 @@ class CrawlUtils {
         }
     }
 
-    parseLinks(html, url) {
+    async getLinkThatLoads(urls, keyword) {
+        let selectedLink;
+        let tryCount = 0;
+        while(tryCount != urls.length){
+            selectedLink = urls[Math.floor(Math.random() * urls.length)];
+            let scrapeResult;
+            try{
+                scrapeResult = await this.scrapePageAsync(selectedLink, keyword);
+                if(!scrapeResult){
+                    tryCount++;
+                    continue;
+                }
+            }
+            catch (e) {
+                tryCount++;
+                continue;
+            }
+            return scrapeResult;
+        }
+        return null;
+    }
+
+    parseLinks($, html, url) {
         let links = [];
-        const $ = cheerio.load(html, { decodeEntities: false });
         $('a[href^="http"]').each((index, value) => {
             const link = $(value).attr('href');
             links.push(link);
@@ -42,8 +66,7 @@ class CrawlUtils {
         return links;
     }
 
-    searchKeyword(html, keyword) {
-        const $ = cheerio.load(html);
+    searchKeyword($, html, keyword) {
         const bodyText = $('html > body').text();
         if (bodyText.toLowerCase().indexOf(keyword.toLowerCase()) !== -1) {
             console.log("FOUND KEYWORD");

@@ -8,13 +8,13 @@ class WebCrawler {
     /* Scrapes links from start page, picks a link at random to visit (and add to result). Repeats this process 
     ** until page limit, time limit, or error limit is reached.
     */
-    async DFSCrawlAsync(crawlParams) {
+    async CrawlAsync(crawlParams) {
         let currentPage = {
-            name: null, 
+            name: crawlParams.start,
             url: crawlParams.start,
-            parent: null,
-            children: []
+            parent: null
         };
+
         let crawlResults = {
             pages: currentPage,
             keyword: crawlParams.keyword,
@@ -22,127 +22,71 @@ class WebCrawler {
             keywordLocation: null
         };
 
+        // declaring timeout flag in obj so JS passes it by reference
         let maxTimeElapsed = {
             timeElapsed: false
         };
 
-        const requestTimer = setTimeout(() => {
-            console.log("DFS CRAWL: MAX TIME ELAPSED");
-            maxTimeElapsed.timeElapsed = true;
-        }, crawlParams.maxSeconds * 1000)
-
         let visitedPages = [];
-        const scrapeResult = await crawlUtils.scrapePageAsync(crawlParams.start, crawlParams.keyword);
-        if(!scrapeResult){
-            return {error: "Start URL was not valid"};
-        }
-        if(scrapeResult.keywordFound){
-            crawlResults.keywordFound = true;
-            crawlResults.keywordLocation = scrapeResult.url;
-            return crawlResults;
-        }
-        currentPage.name = scrapeResult.name;
-        visitedPages.push(crawlParams.start);
-        let unvisitedLinks = scrapeResult.linksOnPage.filter(link => {return !visitedPages.includes(link)});
-        let nextPage = await crawlUtils.getLinkThatLoads(unvisitedLinks, crawlParams.keyword);
-        currentPage.children.push({
-            name: nextPage.name,
-            parent: currentPage.name,
-            url: nextPage.url,
-            children: nextPage.linksOnPage.filter(link => {return !visitedPages.includes(link)})
-        });
-        if(nextPage.keywordFound){
-            crawlResults.keywordFound = true;
-            crawlResults.keywordLocation = nextPage.url;
-            return crawlResults;
-        }
-        await this.DFSRecurse(currentPage.children[0], currentPage.name, crawlResults, 1, crawlParams.limit, visitedPages, maxTimeElapsed, crawlParams.keyword);
+
+        // timeout is maxSeconds * 1000 because setTimeout takes ms
+        setTimeout(() => {
+            console.log("CRAWLER: MAX TIME ELAPSED");
+            maxTimeElapsed.timeElapsed = true;
+        }, crawlParams.maxSeconds * 1000);
+
+        await this.CrawlRecurseAsync(currentPage, crawlResults, 0, crawlParams.limit, visitedPages, maxTimeElapsed, crawlParams.keyword, crawlParams.method);
+
         return crawlResults;
     }
 
-    async DFSRecurse(currentPage, parentName, crawlResults, currentDepth, maxDepth, visitedPages, maxTimeElapsed, keyword){
-        if(currentDepth === maxDepth) {
-            delete currentPage.children;
+    async CrawlRecurseAsync(currentPage, crawlResults, currentDepth, maxDepth, visitedPages, maxTimeElapsed, keyword, crawlMethod) {
+        if (currentDepth === maxDepth || maxTimeElapsed.timeElapsed) {
             return;
         }
-        else if (maxTimeElapsed.timeElapsed){
-            console.log("DFS CRAWL: MAX TIME ELAPSED");
-            delete currentPage.children;
-            return;
-        }
-        let nextPage = await crawlUtils.getLinkThatLoads(currentPage.children, keyword);
-        currentPage.children = [{
-            name: nextPage.name,
-            parent: currentPage.name,
-            url: nextPage.url,
-            children: nextPage.linksOnPage.filter(link => {return !visitedPages.includes(link)})
-        }];
-        if(nextPage.keywordFound){
-            crawlResults.keywordFound = true;
-            crawlResults.keywordLocation = nextPage.url;
-            delete currentPage.children;
-            return 
-        }
 
-        await this.DFSRecurse(currentPage.children[0], currentPage.name, crawlResults, currentDepth + 1, maxDepth, visitedPages, maxTimeElapsed, keyword);
-        return;  
-    }
+        // scrape current page and populate its info
+        const scrapeResult = await crawlUtils.scrapePageAsync(currentPage.url, keyword);
 
-    async BFSCrawlAsync(crawlParams) {
-        let crawlResults = {
-            name: crawlParams.start,
-            url: crawlParams.start,
-            parent: null,
-            children: []
-        }
-
-        let maxTimeElapsed = {
-            timeElapsed: false
-        };
-        const requestTimer = setTimeout(() => {
-            console.log("BFS CRAWL: MAX TIME ELAPSED");
-            maxTimeElapsed.timeElapsed = true;
-        }, 10000)
-        let visitedPages = [];
-        const scrapeResult = await crawlUtils.scrapePageAsync(crawlParams.start, null);
-        visitedPages.push(crawlParams.start);
-
-        const transformedLinks = scrapeResult.linksOnPage.filter(link => { return !visitedPages.includes(link) }).map(link => { return { name: "unvisited", url: link, parent: scrapeResult.name, children: [] } });
         if (scrapeResult) {
-            crawlResults.name = scrapeResult.name;
-            crawlResults.children = transformedLinks;
-        }
-        await this.BFSRecurse(scrapeResult.name, crawlResults.children, 1, crawlParams.limit, visitedPages, maxTimeElapsed);
-        return crawlResults;
-    }
+            visitedPages.push(currentPage.url);
+            currentPage.name = scrapeResult.name;
 
-    async BFSRecurse(parentName, pages, currentDepth, maxDepth, visitedPages, maxTimeElapsed) {
-        if (currentDepth === maxDepth || pages.legnth == 0) {
-            return;
-        }
-
-        for (let page of pages) {
-            if (maxTimeElapsed.timeElapsed) {
+            // return early if keyword is on current page
+            if (scrapeResult.keywordFound) {
+                crawlResults.keywordFound = true;
+                crawlResults.keywordLocation = currentPage.url;
                 return;
             }
-            // console.log(page);
-            let transformedLinks = [];
-            let scrapeResult;
-            try {
-                scrapeResult = await crawlUtils.scrapePageAsync(page.url, null);
-                page.name = scrapeResult.name;
-                visitedPages.push(page.url);
-                if (scrapeResult && scrapeResult.linksOnPage.length > 0) {
-                    transformedLinks = scrapeResult.linksOnPage.filter(link => { return !visitedPages.includes(link) }).map(link => { return { name: "unvisited", url: link, parent: page.name, children: [] } });
+
+            // filter out visited links from scraped links
+            const unseenLinks = scrapeResult.linksOnPage.filter(link => { return !visitedPages.includes(link) });
+
+            // BFS CRAWL
+            if (crawlMethod === 'BFS') {
+                // add children to currentPage
+                const transformedLinks = unseenLinks.map(link => {
+                    return { name: link, url: link, parent: currentPage.name }
+                });
+                currentPage.children = transformedLinks;
+
+                // recurse for each child of currentPage
+                for (let child of currentPage.children) {
+                    await this.CrawlRecurseAsync(child, crawlResults, currentDepth + 1, maxDepth, visitedPages, maxTimeElapsed, keyword, crawlMethod);
                 }
             }
-            catch (error) {
-                console.log(error);
-                continue;
+            // DFS CRAWL
+            else if (crawlMethod === 'DFS') {
+                // add a randomly selected link as a child of currentPage
+                const randomLink = unseenLinks[Math.floor(Math.random() * unseenLinks.length)];
+                currentPage.children = [{
+                    name: randomLink,
+                    url: randomLink,
+                    parent: currentPage.name,
+                }];
+
+                await this.CrawlRecurseAsync(currentPage.children[0], crawlResults, currentDepth + 1, maxDepth, visitedPages, maxTimeElapsed, keyword, crawlMethod);
             }
-            page.children = transformedLinks;
-            let pageName = scrapeResult.name ? scrapeResult.name : page.url;
-            await this.BFSRecurse(pageName, page.children, currentDepth + 1, maxDepth, visitedPages, maxTimeElapsed);
         }
         return;
     }

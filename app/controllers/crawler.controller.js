@@ -1,4 +1,4 @@
-const crawler = require('../Crawler/Crawler.js');
+const crawler = require ('../Crawler/Crawler.js');
 const webCrawler = new crawler();
 
 // default route returns test crawl to blizzard.com
@@ -6,14 +6,15 @@ exports.defaultGet = async (req, res) => {
     const crawlParams = {
         'start': 'https://www.blizzard.com/en-us/',
         'method': 'DFS',
-        'limit': 10,
-        'maxSeconds': 10,
+        'limit': 20,
+        'maxSeconds': 5,
         'keyword': null
     };
     try {
         console.log("Crawl in progress: \n", crawlParams);
-        const links = await webCrawler.DFSCrawlAsync(crawlParams);
+        const links = await webCrawler.CrawlAsync(crawlParams);
         console.log("Crawl complete");
+        links.notes = "This is a test request made with default parameters. To make requests with specified parameters POST to /crawl";
         res.send(links);
     }
     catch (error) {
@@ -32,18 +33,18 @@ exports.crawl = async (req, res) => {
     const crawlParams = {
         'start': req.body.startURL,
         'method': req.body.method,
-        'limit': req.body.limit,
-        'maxSeconds': req.body.maxSeconds ? req.body.maxSeconds : 10,
+        'limit': parseInt(req.body.limit),
+        'maxSeconds': req.body.maxSeconds ? parseInt(req.body.maxSeconds) : 10,
         'keyword': req.body.keyword ? req.body.keyword : null
     };
     try {
         let links;
         console.log("Crawl in progress: \n", crawlParams);
         if (crawlParams.method === "DFS") {
-            links = await webCrawler.DFSCrawlAsync(crawlParams);
+            links = await webCrawler.CrawlAsync(crawlParams);
         }
         else if (crawlParams.method === "BFS") {
-            links = await webCrawler.BFSCrawlAsync(crawlParams);
+            links = await webCrawler.CrawlAsync(crawlParams);
         }
         console.log("Crawl complete");
         res.send(links);

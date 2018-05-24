@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const axios = require('axios');
+const redis = require('redis');
 
 class CrawlUtils {
     

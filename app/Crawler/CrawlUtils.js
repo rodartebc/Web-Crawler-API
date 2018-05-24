@@ -1,6 +1,7 @@
 const cheerio = require('cheerio');
 const axios = require('axios');
-const redis = require('redis');
+const safeCache = require('safe-memory-cache');
+const cache = safeCache({limit: 1000, maxTTL: 3600*1000, });
 
 class CrawlUtils {
     
@@ -9,7 +10,14 @@ class CrawlUtils {
         console.log("SCRAPING: " + url);
         try {
             let startTime = new Date();
-            const response = await axios({ url: url, timeout: 3000 });
+            let response = cache.get(url);
+            if(response){
+                console.log("Found scrape page result in cache")
+            }
+            else{
+                response = await axios({ url: url, timeout: 3000 });
+                cache.set(url, response);  // cache for 
+            }
             const $ = cheerio.load(response.data, {decodeEntities: false});
             let links = [];
             let keywordFound;
@@ -28,6 +36,7 @@ class CrawlUtils {
             };
         }
         catch (e) {
+            console.log(e);
             return null;
         }
     }

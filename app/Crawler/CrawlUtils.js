@@ -12,11 +12,11 @@ class CrawlUtils {
             let startTime = new Date();
             let response = cache.get(url);
             if(response){
-                console.log("Found scrape page result in cache")
+                console.log("Found in cache: ", url);
             }
             else{
                 response = await axios({ url: url, timeout: 3000 });
-                cache.set(url, response);  // cache for 
+                cache.set(url, response);  // cache for 1 hour
             }
             const $ = cheerio.load(response.data, {decodeEntities: false});
             let links = [];

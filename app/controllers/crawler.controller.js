@@ -30,8 +30,12 @@ exports.crawl = async (req, res) => {
             message: "Crawl request must contain: startURL, method, and limit"
         });
     }
+    let validatedStartURL = req.body.startURL;
+    if(!validatedStartURL.startsWith("http://") && !validatedStartURL.startsWith("https://")){
+        validatedStartURL = "http://" + req.body.startURL;
+    }
     const crawlParams = {
-        'start': req.body.startURL,
+        'start': validatedStartURL,
         'method': req.body.method,
         'limit': parseInt(req.body.limit),
         'maxSeconds': req.body.maxSeconds ? parseInt(req.body.maxSeconds) : 10,

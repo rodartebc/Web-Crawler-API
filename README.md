@@ -1,5 +1,5 @@
 # Web-Crawler-API
-Web API for the OSU CS 467 Web Crawler Visualization project. My primary responsibility was the webcrawler itself and the back-end API.
+Web API for OSU CS 467 Web Crawler Visualization group project. My primary responsibility was the webcrawler itself and the back-end API.
 
 Live Demo: https://crawlerapp20180611014013.azurewebsites.net/  
 App (ASP.NET Core 2) Repo: https://github.com/rodartebc/Web-Crawler-App

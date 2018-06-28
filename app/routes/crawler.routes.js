@@ -1,5 +1,5 @@
 module.exports = (app) => {
-    const testController = require('../controllers/crawler.controller.js');
-    app.get('/', testController.defaultGet);
-    app.post('/crawl', testController.crawl);
+    const crawlerController = require('../controllers/crawler.controller.js');
+    app.get('/', crawlerController.defaultGet);
+    app.post('/crawl', crawlerController.crawl);
 }

@@ -4,8 +4,6 @@ const CrawlUtils = require('./CrawlUtils.js');
 
 crawlUtils = new CrawlUtils();
 
-//test
-
 class WebCrawler {
     /* Scrapes links from start page, picks a link at random to visit (and add to result). Repeats this process 
     ** until page limit, time limit, or error limit is reached.
